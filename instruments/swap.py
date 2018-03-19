@@ -4,7 +4,7 @@ import matplotlib.style
 matplotlib.use("Qt5Agg")
 matplotlib.style.use('classic')
 from matplotlib import pyplot as plt
-from credit import calculateExpectedExposure
+from credit import CreditExposure
 
 class IRSwap( object ):
 
@@ -72,13 +72,16 @@ def main():
         for j in range(1,myswap.couponQuantity+1):
             curves[i,j,:] = baseCurve * ( modelShortRates[j] / shortRate)
 
-    y=myswap.vectorSwapPrice(curves,x)
-    for output in y:
-        plt.plot(x,output)
+    MTMs=myswap.vectorSwapPrice(curves,x)
+    PFE = CreditExposure.calculatePFE(MTMs, 0.95)
+    EE = CreditExposure.calculateExpectedExposure(MTMs)
 
-    output = calculateExpectedExposure(y)
-    plt.figure()
-    plt.scatter(x,output,s=10,marker='o',color='red')
+    for MTM in MTMs:
+        plt.plot(x,MTM,alpha=0.3,linewidth=0.5)
+    plt.plot(x, EE, linewidth=2, color='red')
+    plt.plot(x, PFE, linewidth=2, color='orange')
+    #plt.plot(x,EE,linestyle='None',marker='',markersize=10,color='red')
+    #plt.plot(x,PFE,linestyle='None',marker='^',markersize=10,color='yellow')
     plt.show()
 
 
