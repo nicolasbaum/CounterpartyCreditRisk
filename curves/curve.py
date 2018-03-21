@@ -1,6 +1,8 @@
-import numpy as np
 import datetime
 import math
+
+import numpy as np
+
 
 class regularCurve( object ):
     def __init__(self,values=None,offset=None):
@@ -11,24 +13,37 @@ class regularCurve( object ):
         if offset:
             self.values+=offset
 
-# class monteCarloCurve( object ):
-#     def __init__(self, delta_t=None, numberOfPoints = None, initialValue = None, drift=None, sigma=None):
-#         self.initialValue = initialValue or 2.5
-#         self.delta_t=delta_t or 0.5
-#         self.n = numberOfPoints or 10
-#         self.drift = drift or 0
-#         self.sigma = sigma or 0.1
-#
-#     @property
-#     def values(self):
-#         randomValues = np.random.normal(size=self.n-1)
-#         result = np.empty(self.n)
-#         result[0]=self.initialValue
-#         sqrt_delta_t = math.sqrt(self.delta_t)
-#         for i in range(1,self.n):
-#             result[i]=result[i-1]*(1+self.drift*self.delta_t+self.sigma*sqrt_delta_t*randomValues[i-1])
-#
-#         return result
+class monteCarloCurve( object ):
+    def __init__(self, delta_t=None, numberOfPoints = None, initialValue = None, drift=None, sigma=None):
+        self.initialValue = initialValue or 2.5
+        self.delta_t=delta_t or 0.5
+        self.n = numberOfPoints or 10
+        self.drift = drift or 0
+        self.sigma = sigma or 0.1
+    @property
+    def values(self):
+        randomValues = np.random.normal(size=self.n-1)
+        result = np.empty(self.n)
+        result[0]=self.initialValue
+        sqrt_delta_t = math.sqrt(sef.delta_t)
+        for i in range(1,self.n):
+            result[i]=result[i-1]*(1+self.drift*self.delta_t+self.sigma*sqrt_delta_t*randomValues[i-1])
+        return result
+
+class curvesFromModel( object ):
+    def __init__(self, model):
+        self.model = model
+
+    def generateCurves(self, baseCurve, iterations):
+        shortRate = baseCurve[0]
+        curves = np.zeros([iterations, self.model.n, self.model.n])
+        for i in range(iterations):
+            modelShortRates = self.model.values
+            curves[i, 0, :] = baseCurve
+            for j in range(1, self.model.n):
+                curves[i, j, :] = baseCurve * ( modelShortRates[j] / shortRate )
+
+        return curves
 
 class shortRateCIRmodel( object ):
     def __init__(self, numberOfPoints = None, deltaT=None, initialValue=None, K=None, theta=None, sigma=None):
@@ -62,7 +77,7 @@ class zeroCurve( object ):
         """ Bootstrapping the yield curve """
         bootstrapper=BootstrapYieldCurve()
         for i,yld in enumerate(yieldCurve):
-            bootstrapper.add_instrument(100,(i+1)*deltaT,yld,100,int(round(1/deltaT)))
+            bootstrapper.add_instrument(100,(i+1)*deltaT,yld*100,100,int(round(1/deltaT)))
 
         self.values = np.array( bootstrapper.get_zero_rates() )
 

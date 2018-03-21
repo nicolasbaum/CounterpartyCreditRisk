@@ -3,7 +3,12 @@ import numpy as np
 class CreditExposure:
 
     @staticmethod
-    def calculateExpectedExposure(expectedMTMs):
+    def transformExposuresGivenCollateral( exposure, threshold, interval ):
+        #ToDo: Calcular puntos intermedios dado deltaT para magin call
+        pass
+
+    @staticmethod
+    def calculateExpectedExposure( expectedMTMs ):
         mtms = expectedMTMs.copy()
         mtms[ np.where(mtms<0) ]=0
         return np.average(mtms,axis=0)
