@@ -13,6 +13,16 @@ class regularCurve( object ):
         if offset:
             self.values+=offset
 
+class flatCurve( object ):
+    def __init__(self):
+        aux = regularCurve().values
+        self.values = np.ones(aux.shape[0])*aux[0]
+
+class invertedCurve( object ):
+    def __init__(self):
+        aux = regularCurve().values
+        self.values = np.linspace(aux[0],0,aux.shape[0])
+
 class monteCarloCurve( object ):
     def __init__(self, delta_t=None, numberOfPoints = None, initialValue = None, drift=None, sigma=None):
         self.initialValue = initialValue or 2.5
@@ -25,7 +35,7 @@ class monteCarloCurve( object ):
         randomValues = np.random.normal(size=self.n-1)
         result = np.empty(self.n)
         result[0]=self.initialValue
-        sqrt_delta_t = math.sqrt(sef.delta_t)
+        sqrt_delta_t = math.sqrt(self.delta_t)
         for i in range(1,self.n):
             result[i]=result[i-1]*(1+self.drift*self.delta_t+self.sigma*sqrt_delta_t*randomValues[i-1])
         return result
@@ -41,7 +51,7 @@ class curvesFromModel( object ):
             modelShortRates = self.model.values
             curves[i, 0, :] = baseCurve
             for j in range(1, self.model.n):
-                curves[i, j, :] = baseCurve * ( modelShortRates[j] / shortRate )
+                curves[i, j, :] = baseCurve + ( modelShortRates[j] - shortRate )
 
         return curves
 
@@ -68,7 +78,7 @@ class shortRateCIRmodel( object ):
         result = np.empty(self.n)
         result[0]=self.initialValue
         for i in range(1,self.n):
-            result[i]=result[i-1]+self.K*(self.theta-result[i-1])*self.deltaT+self.sigma*math.sqrt(result[i-1])*randomValues[i-1]
+            result[i]=result[i-1]+self.K*(self.theta-result[i-1])*self.deltaT+self.sigma*math.sqrt(result[i-1]*self.deltaT)*randomValues[i-1]
 
         return result
 

@@ -1,8 +1,13 @@
-from matplotlib import pyplot as plt
+import matplotlib
+import matplotlib.style
+matplotlib.use("Qt5Agg")
+matplotlib.style.use('classic')
+from matplotlib import pyplot as \
+    plt
 import numpy as np
 from credit import CreditExposure
-from curves.curve import regularCurve,shortRateCIRmodel, zeroCurve, curvesFromModel
-from instruments.swap import IRSwap
+from curves.curve import regularCurve,flatCurve,shortRateCIRmodel, zeroCurve, curvesFromModel
+from instruments.swap import IRSwap, Swaption
 
 def main():
     ITERATIONS = 10000
@@ -13,7 +18,9 @@ def main():
     timeVector = instrument.generateTimeVector()
 
     #construir curva original
-    baseCurve = zeroCurve( regularCurve().values, instrument.couponfreq ).values[:instrument.couponQuantity+1]
+    yieldCurve = regularCurve().values
+    #yieldCurve = flatCurve().values
+    baseCurve = zeroCurve( yieldCurve, instrument.couponfreq ).values[:instrument.couponQuantity+1]
     shortRate = baseCurve[0]
 
     #el fixed paga el float actual para arrancar en MTM=0
@@ -39,11 +46,11 @@ def main():
     #Graficos
     for MTM in MTMs:
         plt.plot(timeVector,MTM,alpha=0.3,linewidth=0.5)
-    plt.plot(timeVector, EE, linewidth=2, color='red')
+    plt.plot(timeVector, EE, linewidth=2, color='yellow', label='EE')
 
     colors = iter( plt.get_cmap('cool')( np.linspace( 0, 1, len(PFEs) ) ) )
     for i,pfe in enumerate(PFEs):
-        plt.plot(timeVector, pfe, linewidth=2, color=next( colors ), label='PFE@'+str(PERCENTILES[i])+'%' )
+        plt.plot(timeVector, pfe, linewidth=2, color=next( colors ), label='PFE@'+str(PERCENTILES[i]*100)+'%' )
 
     plt.legend(loc='upper left', fontsize=8, framealpha=0.5)#.get_frame().set_facecolor('grey')
     plt.show()

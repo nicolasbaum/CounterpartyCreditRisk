@@ -1,10 +1,4 @@
 import numpy as np
-import matplotlib
-import matplotlib.style
-matplotlib.use("Qt5Agg")
-matplotlib.style.use('classic')
-from matplotlib import pyplot as plt
-from credit import CreditExposure
 
 class IRSwap( object ):
 
@@ -54,7 +48,20 @@ class IRSwap( object ):
 class Swaption( IRSwap ):
     def __init__(self, strike= None, **kwargs):
         super().__init__(**kwargs)
-        self.strike = strike or self.floatRate+0.01
-        self.triggered = False
+        self.strike = strike or self.floatRate*1.1
+
+    def vectorPrice(self, indexCurves, time):
+        n=len(time)
+        output = np.zeros([indexCurves.shape[0],n ])
+        for i,curves in enumerate(indexCurves):
+            overStrike = np.argwhere( curves[:,0] >= self.strike )
+            if len(overStrike)>0:
+                overStrike = overStrike[0][0]
+                output[i, :] = np.where( range(n) >= overStrike, np.array([ self.price(curves, t) for t in time]), 0  )
+            if i%1000==0:
+                print('%s curves simulated'%i)
+
+        return output
+
 
 
