@@ -1,15 +1,15 @@
 import numpy as np
 from instruments.base import baseInstrument
 
-class IRSwap( baseInstrument ):
 
-    def __init__(self, notional=None, maturity=None, couponfreq=None, fixedRate=None, floatRate = None, **kwargs):
+class Bond( baseInstrument ):
+
+    def __init__(self, notional=None, maturity=None, couponfreq=None, fixedRate=None, **kwargs):
         self.notional = notional or 1e6
         self.maturity = maturity or 5
         self.fixedRate = fixedRate or 0.05
         self.couponfreq = couponfreq or 0.5
         self.couponQuantity = int(self.maturity/self.couponfreq)
-        self.floatRate = floatRate or 0.05
 
 
     def price(self, indexCurves, time, startInZero=True):
@@ -26,8 +26,10 @@ class IRSwap( baseInstrument ):
         if startingTime==endTime:
             return 0
 
-        floatRate=curveSegment[0] if startInZero else self.floatRate
-        settlements = np.ones(settlementsRemaining)*( -self.fixedRate+floatRate )*self.notional
+        notionalRemaining = np.linspace(self.notional,0,self.couponQuantity)[startingTime:]
+        amortization = self.notional/self.couponQuantity
+
+        settlements = np.ones(settlementsRemaining)*self.fixedRate*notionalRemaining + amortization
 
         powers=np.arange(1,(endTime-startingTime)+1)
         return np.sum( settlements/( ( 1+curveSegment/couponsPerYear )**powers ) )
@@ -41,25 +43,3 @@ class IRSwap( baseInstrument ):
                 print('%s curves simulated'%i)
 
         return output
-
-
-class Swaption( IRSwap ):
-    def __init__(self, strike= None, **kwargs):
-        super().__init__(**kwargs)
-        self.strike = strike or self.floatRate*1.1
-
-    def vectorPrice(self, indexCurves, time):
-        n=len(time)
-        output = np.zeros([indexCurves.shape[0],n ])
-        for i,curves in enumerate(indexCurves):
-            overStrike = np.argwhere( curves[:,0] >= self.strike )
-            if len(overStrike)>0:
-                overStrike = overStrike[0][0]
-                output[i, :] = np.where( range(n) >= overStrike, np.array([ self.price(curves, t) for t in time]), 0  )
-            if i%1000==0:
-                print('%s curves simulated'%i)
-
-        return output
-
-
-
